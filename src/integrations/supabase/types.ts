@@ -14,7 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      characters: {
+        Row: {
+          appearance_prompt: string
+          created_at: string
+          episode_id: string
+          id: string
+          name: string
+          voice: string
+        }
+        Insert: {
+          appearance_prompt?: string
+          created_at?: string
+          episode_id: string
+          id?: string
+          name: string
+          voice?: string
+        }
+        Update: {
+          appearance_prompt?: string
+          created_at?: string
+          episode_id?: string
+          id?: string
+          name?: string
+          voice?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "characters_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      episodes: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          episode_number: number
+          id: string
+          language: string
+          mood: string
+          published_at: string | null
+          series_title: string
+          share_slug: string
+          status: string
+          story_text: string
+          style: string
+          target_duration_min: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          episode_number?: number
+          id?: string
+          language?: string
+          mood?: string
+          published_at?: string | null
+          series_title?: string
+          share_slug?: string
+          status?: string
+          story_text?: string
+          style?: string
+          target_duration_min?: number
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          episode_number?: number
+          id?: string
+          language?: string
+          mood?: string
+          published_at?: string | null
+          series_title?: string
+          share_slug?: string
+          status?: string
+          story_text?: string
+          style?: string
+          target_duration_min?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      scenes: {
+        Row: {
+          audio_status: string
+          audio_url: string | null
+          character_id: string | null
+          character_name: string | null
+          created_at: string
+          description: string
+          dialogue: string
+          duration_sec: number
+          episode_id: string
+          id: string
+          image_status: string
+          image_url: string | null
+          narration: string
+          order_index: number
+        }
+        Insert: {
+          audio_status?: string
+          audio_url?: string | null
+          character_id?: string | null
+          character_name?: string | null
+          created_at?: string
+          description?: string
+          dialogue?: string
+          duration_sec?: number
+          episode_id: string
+          id?: string
+          image_status?: string
+          image_url?: string | null
+          narration?: string
+          order_index: number
+        }
+        Update: {
+          audio_status?: string
+          audio_url?: string | null
+          character_id?: string | null
+          character_name?: string | null
+          created_at?: string
+          description?: string
+          dialogue?: string
+          duration_sec?: number
+          episode_id?: string
+          id?: string
+          image_status?: string
+          image_url?: string | null
+          narration?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenes_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scenes_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
