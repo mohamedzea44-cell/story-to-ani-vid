@@ -108,11 +108,11 @@ export const publishEpisode = createServerFn({ method: "POST" })
       .order("order_index")
       .limit(1)
       .maybeSingle();
-    const patch: Record<string, unknown> = {
-      status: "published",
+    const patch = {
+      status: "published" as const,
       published_at: new Date().toISOString(),
+      ...(first?.image_url ? { cover_image_url: first.image_url } : {}),
     };
-    if (first?.image_url) patch.cover_image_url = first.image_url;
     const { error } = await context.supabase.from("episodes").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     const { data: ep } = await context.supabase
