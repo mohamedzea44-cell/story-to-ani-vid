@@ -88,6 +88,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "AnimeCast — حوّل قصصك إلى حلقات أنمي" },
+      { name: "description", content: "منصة ذكاء اصطناعي تحوّل قصتك إلى حلقة أنمي كاملة بمشاهد وصور وأصوات، قابلة للتعديل والمشاركة." },
+      { property: "og:description", content: "منصة ذكاء اصطناعي تحوّل قصتك إلى حلقة أنمي كاملة بمشاهد وصور وأصوات، قابلة للتعديل والمشاركة." },
+      { name: "twitter:description", content: "منصة ذكاء اصطناعي تحوّل قصتك إلى حلقة أنمي كاملة بمشاهد وصور وأصوات، قابلة للتعديل والمشاركة." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/21808044-44cf-448e-9a7b-c246b03fb198/id-preview-59d7d028--18084d36-3106-4b22-be7c-a88930fb3218.lovable.app-1783257344922.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/21808044-44cf-448e-9a7b-c246b03fb198/id-preview-59d7d028--18084d36-3106-4b22-be7c-a88930fb3218.lovable.app-1783257344922.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
