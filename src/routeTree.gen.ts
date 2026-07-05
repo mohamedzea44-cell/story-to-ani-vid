@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WatchSlugRouteImport } from './routes/watch.$slug'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEpisodesNewRouteImport } from './routes/_authenticated/episodes.new'
+import { Route as AuthenticatedEpisodesIdRouteImport } from './routes/_authenticated/episodes.$id'
+import { Route as AuthenticatedEpisodesIdPreviewRouteImport } from './routes/_authenticated/episodes.$id.preview'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -29,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchSlugRoute = WatchSlugRouteImport.update({
+  id: '/watch/$slug',
+  path: '/watch/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -40,18 +48,35 @@ const AuthenticatedEpisodesNewRoute =
     path: '/episodes/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEpisodesIdRoute = AuthenticatedEpisodesIdRouteImport.update({
+  id: '/episodes/$id',
+  path: '/episodes/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEpisodesIdPreviewRoute =
+  AuthenticatedEpisodesIdPreviewRouteImport.update({
+    id: '/preview',
+    path: '/preview',
+    getParentRoute: () => AuthenticatedEpisodesIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/watch/$slug': typeof WatchSlugRoute
+  '/episodes/$id': typeof AuthenticatedEpisodesIdRouteWithChildren
   '/episodes/new': typeof AuthenticatedEpisodesNewRoute
+  '/episodes/$id/preview': typeof AuthenticatedEpisodesIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/watch/$slug': typeof WatchSlugRoute
+  '/episodes/$id': typeof AuthenticatedEpisodesIdRouteWithChildren
   '/episodes/new': typeof AuthenticatedEpisodesNewRoute
+  '/episodes/$id/preview': typeof AuthenticatedEpisodesIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,26 +84,47 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/watch/$slug': typeof WatchSlugRoute
+  '/_authenticated/episodes/$id': typeof AuthenticatedEpisodesIdRouteWithChildren
   '/_authenticated/episodes/new': typeof AuthenticatedEpisodesNewRoute
+  '/_authenticated/episodes/$id/preview': typeof AuthenticatedEpisodesIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/episodes/new'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/watch/$slug'
+    | '/episodes/$id'
+    | '/episodes/new'
+    | '/episodes/$id/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/episodes/new'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/watch/$slug'
+    | '/episodes/$id'
+    | '/episodes/new'
+    | '/episodes/$id/preview'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/watch/$slug'
+    | '/_authenticated/episodes/$id'
     | '/_authenticated/episodes/new'
+    | '/_authenticated/episodes/$id/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  WatchSlugRoute: typeof WatchSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -104,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch/$slug': {
+      id: '/watch/$slug'
+      path: '/watch/$slug'
+      fullPath: '/watch/$slug'
+      preLoaderRoute: typeof WatchSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -118,16 +171,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEpisodesNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/episodes/$id': {
+      id: '/_authenticated/episodes/$id'
+      path: '/episodes/$id'
+      fullPath: '/episodes/$id'
+      preLoaderRoute: typeof AuthenticatedEpisodesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/episodes/$id/preview': {
+      id: '/_authenticated/episodes/$id/preview'
+      path: '/preview'
+      fullPath: '/episodes/$id/preview'
+      preLoaderRoute: typeof AuthenticatedEpisodesIdPreviewRouteImport
+      parentRoute: typeof AuthenticatedEpisodesIdRoute
+    }
   }
 }
 
+interface AuthenticatedEpisodesIdRouteChildren {
+  AuthenticatedEpisodesIdPreviewRoute: typeof AuthenticatedEpisodesIdPreviewRoute
+}
+
+const AuthenticatedEpisodesIdRouteChildren: AuthenticatedEpisodesIdRouteChildren =
+  {
+    AuthenticatedEpisodesIdPreviewRoute: AuthenticatedEpisodesIdPreviewRoute,
+  }
+
+const AuthenticatedEpisodesIdRouteWithChildren =
+  AuthenticatedEpisodesIdRoute._addFileChildren(
+    AuthenticatedEpisodesIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEpisodesIdRoute: typeof AuthenticatedEpisodesIdRouteWithChildren
   AuthenticatedEpisodesNewRoute: typeof AuthenticatedEpisodesNewRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEpisodesIdRoute: AuthenticatedEpisodesIdRouteWithChildren,
   AuthenticatedEpisodesNewRoute: AuthenticatedEpisodesNewRoute,
 }
 
@@ -138,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  WatchSlugRoute: WatchSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
