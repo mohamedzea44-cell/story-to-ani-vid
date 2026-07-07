@@ -30,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -42,6 +44,8 @@ import {
   Copy,
   Plus,
   ArrowRight,
+  Wand2,
+  CheckCircle2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/episodes/$id")({
