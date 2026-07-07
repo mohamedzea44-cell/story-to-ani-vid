@@ -70,6 +70,8 @@ export const updateEpisode = createServerFn({ method: "POST" })
           language: z.enum(["ar", "en"]).optional(),
           style: z.string().optional(),
           mood: z.string().optional(),
+          voice_tone: z.string().max(40).optional(),
+          sfx_style: z.string().max(40).optional(),
           target_duration_min: z.number().int().min(5).max(60).optional(),
           cover_image_url: z.string().url().nullable().optional(),
         }),
