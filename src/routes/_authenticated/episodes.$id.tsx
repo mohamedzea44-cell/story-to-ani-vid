@@ -144,6 +144,82 @@ function EditorPage() {
     },
   });
 
+  // ---- Auto-studio: one-click full generation with progress ----
+  const [autoBusy, setAutoBusy] = useState(false);
+  const [autoLabel, setAutoLabel] = useState("");
+  const [autoDone, setAutoDone] = useState(0);
+  const [autoTotal, setAutoTotal] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  async function autoGenerate() {
+    if (!meta) return;
+    setAutoBusy(true);
+    setAutoDone(0);
+    setAutoTotal(0);
+    try {
+      // 1) Save current settings
+      setAutoLabel("حفظ الإعدادات…");
+      await updateFn({ data: { id, patch: meta } });
+
+      // 2) Split story if no scenes yet
+      let currentScenes = data.scenes;
+      if (currentScenes.length === 0) {
+        setAutoLabel("تحليل القصة وتقسيمها لمشاهد…");
+        await splitFn({ data: { episodeId: id, replace: true } });
+        const fresh = await getFn({ data: { id } });
+        currentScenes = fresh.scenes;
+        qc.setQueryData(["episode", id], fresh);
+      }
+
+      const needImg = currentScenes.filter((s) => !s.image_url);
+      const needAud = currentScenes.filter((s) => !s.audio_url);
+      const total = needImg.length + needAud.length + 1; // +1 for publish
+      setAutoTotal(total);
+
+      // 3) Images
+      for (let i = 0; i < needImg.length; i++) {
+        const s = needImg[i];
+        setAutoLabel(`توليد صورة المشهد ${s.order_index + 1} (${i + 1}/${needImg.length})`);
+        try {
+          await imgFn({ data: { sceneId: s.id } });
+        } catch (e) {
+          toast.error(`صورة مشهد ${s.order_index + 1}: ${String(e)}`);
+        }
+        setAutoDone((d) => d + 1);
+      }
+
+      // 4) Audio
+      for (let i = 0; i < needAud.length; i++) {
+        const s = needAud[i];
+        setAutoLabel(`توليد صوت المشهد ${s.order_index + 1} (${i + 1}/${needAud.length})`);
+        try {
+          await audFn({ data: { sceneId: s.id } });
+        } catch (e) {
+          toast.error(`صوت مشهد ${s.order_index + 1}: ${String(e)}`);
+        }
+        setAutoDone((d) => d + 1);
+      }
+
+      // 5) Publish and show share link
+      setAutoLabel("نشر الحلقة وإنشاء رابط المشاركة…");
+      const { slug } = await publishFn({ data: { id } });
+      setAutoDone((d) => d + 1);
+      const url = `${window.location.origin}/watch/${slug}`;
+      setShareUrl(url);
+      try { await navigator.clipboard?.writeText(url); } catch { /* ignore */ }
+      setShareOpen(true);
+      toast.success("جاهز! تم إنشاء الحلقة ونسخ رابط المشاركة");
+      refetch();
+    } catch (e) {
+      toast.error(`خطأ: ${String(e)}`);
+    } finally {
+      setAutoBusy(false);
+      setAutoLabel("");
+    }
+  }
+
+
   if (isLoading || !data || !meta) {
     return (
       <div className="min-h-screen">
