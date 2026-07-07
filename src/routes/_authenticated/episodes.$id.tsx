@@ -282,7 +282,104 @@ function EditorPage() {
           </div>
         </div>
 
+        {/* ===== Auto Studio ===== */}
+        <div className="mb-6 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-primary/20 text-primary">
+                <Wand2 className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">توليد الحلقة كاملة تلقائياً</h2>
+                <p className="text-xs text-muted-foreground">
+                  زر واحد يُحلّل القصة، يُنشئ المشاهد والشخصيات، يُولّد كل الصور والأصوات، وينشر الحلقة مع رابط جاهز للمشاركة.
+                </p>
+              </div>
+            </div>
+            <Button size="lg" className="glow" onClick={autoGenerate} disabled={autoBusy}>
+              {autoBusy ? (
+                <Loader2 className="ml-2 size-4 animate-spin" />
+              ) : (
+                <Wand2 className="ml-2 size-4" />
+              )}
+              {autoBusy ? "جاري التوليد…" : "ابدأ التوليد التلقائي"}
+            </Button>
+          </div>
+
+          {autoBusy && (
+            <div className="mt-5 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">{autoLabel || "…"}</span>
+                <span className="text-muted-foreground">
+                  {autoTotal > 0 ? `${autoDone} / ${autoTotal}` : ""}
+                </span>
+              </div>
+              <Progress value={autoTotal > 0 ? (autoDone / autoTotal) * 100 : 5} />
+              <p className="text-[11px] text-muted-foreground">
+                لا تغلق الصفحة — العملية قد تستغرق عدة دقائق حسب طول الحلقة.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ===== Share Dialog ===== */}
+        <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="size-5 text-primary" />
+                الحلقة جاهزة!
+              </DialogTitle>
+              <DialogDescription>
+                تم نشر الحلقة وإنشاء رابط مشاركة عام. أي شخص يفتح الرابط سيشاهد الحلقة مباشرة.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input readOnly value={shareUrl} className="font-mono text-xs" />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(shareUrl);
+                    toast.success("تم النسخ");
+                  }}
+                >
+                  <Copy className="size-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="secondary">
+                  <a href={shareUrl} target="_blank" rel="noreferrer">
+                    <Play className="ml-2 size-4" />
+                    فتح صفحة المشاهدة
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const text = `شاهد حلقة الأنمي: ${meta?.title ?? ""}`;
+                    const wa = `https://wa.me/?text=${encodeURIComponent(`${text}\n${shareUrl}`)}`;
+                    window.open(wa, "_blank");
+                  }}
+                >
+                  مشاركة واتساب
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const t = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`شاهد حلقة الأنمي: ${meta?.title ?? ""}`)}&url=${encodeURIComponent(shareUrl)}`;
+                    window.open(t, "_blank");
+                  }}
+                >
+                  مشاركة X
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Tabs defaultValue="story">
+
           <TabsList>
             <TabsTrigger value="story">القصة والإعدادات</TabsTrigger>
             <TabsTrigger value="scenes">المشاهد ({data.scenes.length})</TabsTrigger>
