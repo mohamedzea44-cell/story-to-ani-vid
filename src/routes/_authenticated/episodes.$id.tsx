@@ -163,7 +163,7 @@ function EditorPage() {
       await updateFn({ data: { id, patch: meta } });
 
       // 2) Split story if no scenes yet
-      let currentScenes = data.scenes;
+      let currentScenes = data?.scenes ?? [];
       if (currentScenes.length === 0) {
         setAutoLabel("تحليل القصة وتقسيمها لمشاهد…");
         await splitFn({ data: { episodeId: id, replace: true } });
