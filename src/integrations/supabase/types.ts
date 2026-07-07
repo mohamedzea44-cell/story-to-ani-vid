@@ -59,6 +59,7 @@ export type Database = {
           mood: string
           published_at: string | null
           series_title: string
+          sfx_style: string
           share_slug: string
           status: string
           story_text: string
@@ -67,6 +68,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          voice_tone: string
         }
         Insert: {
           cover_image_url?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           mood?: string
           published_at?: string | null
           series_title?: string
+          sfx_style?: string
           share_slug?: string
           status?: string
           story_text?: string
@@ -85,6 +88,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id: string
+          voice_tone?: string
         }
         Update: {
           cover_image_url?: string | null
@@ -95,6 +99,7 @@ export type Database = {
           mood?: string
           published_at?: string | null
           series_title?: string
+          sfx_style?: string
           share_slug?: string
           status?: string
           story_text?: string
@@ -103,6 +108,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          voice_tone?: string
         }
         Relationships: []
       }
