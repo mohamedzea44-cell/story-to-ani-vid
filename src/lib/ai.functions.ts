@@ -14,16 +14,6 @@ const STYLE_PROMPTS: Record<string, string> = {
   "ghibli":
     "studio ghibli inspired anime style, hand painted background, warm natural lighting, soft palette",
   "dark":
-const STYLE_PROMPTS: Record<string, string> = {
-  "modern-shonen":
-    "modern shonen anime style, vibrant colors, dynamic action lines, cinematic lighting, high detail",
-  "shojo":
-    "shojo anime style, soft pastel colors, delicate line art, sparkles, romantic atmosphere",
-  "cyberpunk":
-    "cyberpunk anime style, neon lights, dark alleys, rain, glowing signs, futuristic city",
-  "ghibli":
-    "studio ghibli inspired anime style, hand painted background, warm natural lighting, soft palette",
-  "dark":
     "dark anime style, deep shadows, high contrast, dramatic lighting, moody atmosphere, seinen",
 };
 
