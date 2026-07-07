@@ -286,7 +286,7 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
 
     const { data: ep } = await context.supabase
       .from("episodes")
-      .select("user_id")
+      .select("user_id, voice_tone")
       .eq("id", scene.episode_id)
       .single();
     if (!ep) throw new Error("Episode not found");
@@ -304,6 +304,9 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
     const text = [scene.narration, scene.dialogue].filter(Boolean).join("\n\n").trim();
     if (!text) throw new Error("لا يوجد نص لتوليد الصوت");
 
+    const toneKey = (ep as { voice_tone?: string }).voice_tone ?? "natural";
+    const instructions = VOICE_TONE_INSTRUCTIONS[toneKey] ?? VOICE_TONE_INSTRUCTIONS.natural;
+
     await context.supabase
       .from("scenes")
       .update({ audio_status: "generating" })
@@ -316,6 +319,7 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
         model: "openai/gpt-4o-mini-tts",
         input: text,
         voice,
+        instructions,
         response_format: "mp3",
       }),
     });
