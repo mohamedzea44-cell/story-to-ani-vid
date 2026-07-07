@@ -108,7 +108,7 @@ Rules:
           { role: "system", content: sys },
           {
             role: "user",
-            content: `Story:\n${ep.story_text || "(the user left the story blank — invent a compelling one that matches the mood)"}\n\nStyle: ${ep.style}\nMood: ${ep.mood}\nLanguage of narration/dialogue: ${lang}`,
+            content: `Story:\n${ep.story_text || "(the user left the story blank — invent a compelling one that matches the mood)"}\n\nStyle: ${ep.style}\nMood: ${ep.mood}\nSFX/Atmosphere style: ${(ep as { sfx_style?: string }).sfx_style ?? "cinematic"}\nVoice tone for narration: ${(ep as { voice_tone?: string }).voice_tone ?? "natural"}\nLanguage of narration/dialogue: ${lang}`,
           },
         ],
         response_format: {
