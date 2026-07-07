@@ -85,21 +85,26 @@ function EditorPage() {
     story_text: string;
     style: string;
     mood: string;
+    voice_tone: string;
+    sfx_style: string;
     language: "ar" | "en";
     target_duration_min: number;
   } | null>(null);
 
   // Initialize local meta once
   if (data?.episode && !meta) {
+    const ep = data.episode as typeof data.episode & { voice_tone?: string; sfx_style?: string };
     setMeta({
-      title: data.episode.title,
-      series_title: data.episode.series_title,
-      episode_number: data.episode.episode_number,
-      story_text: data.episode.story_text,
-      style: data.episode.style,
-      mood: data.episode.mood,
-      language: data.episode.language as "ar" | "en",
-      target_duration_min: data.episode.target_duration_min,
+      title: ep.title,
+      series_title: ep.series_title,
+      episode_number: ep.episode_number,
+      story_text: ep.story_text,
+      style: ep.style,
+      mood: ep.mood,
+      voice_tone: ep.voice_tone ?? "natural",
+      sfx_style: ep.sfx_style ?? "cinematic",
+      language: ep.language as "ar" | "en",
+      target_duration_min: ep.target_duration_min,
     });
   }
 
