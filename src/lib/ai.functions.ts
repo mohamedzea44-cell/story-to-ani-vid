@@ -201,7 +201,7 @@ export const generateSceneImage = createServerFn({ method: "POST" })
 
     const { data: ep } = await context.supabase
       .from("episodes")
-      .select("style, mood, user_id")
+      .select("style, mood, user_id, sfx_style")
       .eq("id", scene.episode_id)
       .single();
     if (!ep) throw new Error("Episode not found");
@@ -217,7 +217,9 @@ export const generateSceneImage = createServerFn({ method: "POST" })
     }
 
     const stylePrompt = STYLE_PROMPTS[ep.style] ?? STYLE_PROMPTS["modern-shonen"];
-    const prompt = `${stylePrompt}. Mood: ${ep.mood}. ${charLook}Scene: ${scene.description}. Widescreen 16:9 cinematic composition, anime keyframe quality, no text or watermarks.`;
+    const sfxKey = (ep as { sfx_style?: string }).sfx_style ?? "cinematic";
+    const sfxPrompt = SFX_PROMPTS[sfxKey] ?? SFX_PROMPTS.cinematic;
+    const prompt = `${stylePrompt}. Mood: ${ep.mood}. Atmosphere: ${sfxPrompt}. ${charLook}Scene: ${scene.description}. Widescreen 16:9 cinematic composition, anime keyframe quality, no text or watermarks.`;
 
     await context.supabase
       .from("scenes")
