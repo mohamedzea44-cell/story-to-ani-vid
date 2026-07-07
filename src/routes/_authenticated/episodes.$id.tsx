@@ -30,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -42,6 +44,8 @@ import {
   Copy,
   Plus,
   ArrowRight,
+  Wand2,
+  CheckCircle2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/episodes/$id")({
@@ -140,6 +144,82 @@ function EditorPage() {
     },
   });
 
+  // ---- Auto-studio: one-click full generation with progress ----
+  const [autoBusy, setAutoBusy] = useState(false);
+  const [autoLabel, setAutoLabel] = useState("");
+  const [autoDone, setAutoDone] = useState(0);
+  const [autoTotal, setAutoTotal] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  async function autoGenerate() {
+    if (!meta) return;
+    setAutoBusy(true);
+    setAutoDone(0);
+    setAutoTotal(0);
+    try {
+      // 1) Save current settings
+      setAutoLabel("حفظ الإعدادات…");
+      await updateFn({ data: { id, patch: meta } });
+
+      // 2) Split story if no scenes yet
+      let currentScenes = data?.scenes ?? [];
+      if (currentScenes.length === 0) {
+        setAutoLabel("تحليل القصة وتقسيمها لمشاهد…");
+        await splitFn({ data: { episodeId: id, replace: true } });
+        const fresh = await getFn({ data: { id } });
+        currentScenes = fresh.scenes;
+        qc.setQueryData(["episode", id], fresh);
+      }
+
+      const needImg = currentScenes.filter((s) => !s.image_url);
+      const needAud = currentScenes.filter((s) => !s.audio_url);
+      const total = needImg.length + needAud.length + 1; // +1 for publish
+      setAutoTotal(total);
+
+      // 3) Images
+      for (let i = 0; i < needImg.length; i++) {
+        const s = needImg[i];
+        setAutoLabel(`توليد صورة المشهد ${s.order_index + 1} (${i + 1}/${needImg.length})`);
+        try {
+          await imgFn({ data: { sceneId: s.id } });
+        } catch (e) {
+          toast.error(`صورة مشهد ${s.order_index + 1}: ${String(e)}`);
+        }
+        setAutoDone((d) => d + 1);
+      }
+
+      // 4) Audio
+      for (let i = 0; i < needAud.length; i++) {
+        const s = needAud[i];
+        setAutoLabel(`توليد صوت المشهد ${s.order_index + 1} (${i + 1}/${needAud.length})`);
+        try {
+          await audFn({ data: { sceneId: s.id } });
+        } catch (e) {
+          toast.error(`صوت مشهد ${s.order_index + 1}: ${String(e)}`);
+        }
+        setAutoDone((d) => d + 1);
+      }
+
+      // 5) Publish and show share link
+      setAutoLabel("نشر الحلقة وإنشاء رابط المشاركة…");
+      const { slug } = await publishFn({ data: { id } });
+      setAutoDone((d) => d + 1);
+      const url = `${window.location.origin}/watch/${slug}`;
+      setShareUrl(url);
+      try { await navigator.clipboard?.writeText(url); } catch { /* ignore */ }
+      setShareOpen(true);
+      toast.success("جاهز! تم إنشاء الحلقة ونسخ رابط المشاركة");
+      refetch();
+    } catch (e) {
+      toast.error(`خطأ: ${String(e)}`);
+    } finally {
+      setAutoBusy(false);
+      setAutoLabel("");
+    }
+  }
+
+
   if (isLoading || !data || !meta) {
     return (
       <div className="min-h-screen">
@@ -202,7 +282,104 @@ function EditorPage() {
           </div>
         </div>
 
+        {/* ===== Auto Studio ===== */}
+        <div className="mb-6 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-primary/20 text-primary">
+                <Wand2 className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">توليد الحلقة كاملة تلقائياً</h2>
+                <p className="text-xs text-muted-foreground">
+                  زر واحد يُحلّل القصة، يُنشئ المشاهد والشخصيات، يُولّد كل الصور والأصوات، وينشر الحلقة مع رابط جاهز للمشاركة.
+                </p>
+              </div>
+            </div>
+            <Button size="lg" className="glow" onClick={autoGenerate} disabled={autoBusy}>
+              {autoBusy ? (
+                <Loader2 className="ml-2 size-4 animate-spin" />
+              ) : (
+                <Wand2 className="ml-2 size-4" />
+              )}
+              {autoBusy ? "جاري التوليد…" : "ابدأ التوليد التلقائي"}
+            </Button>
+          </div>
+
+          {autoBusy && (
+            <div className="mt-5 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">{autoLabel || "…"}</span>
+                <span className="text-muted-foreground">
+                  {autoTotal > 0 ? `${autoDone} / ${autoTotal}` : ""}
+                </span>
+              </div>
+              <Progress value={autoTotal > 0 ? (autoDone / autoTotal) * 100 : 5} />
+              <p className="text-[11px] text-muted-foreground">
+                لا تغلق الصفحة — العملية قد تستغرق عدة دقائق حسب طول الحلقة.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ===== Share Dialog ===== */}
+        <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="size-5 text-primary" />
+                الحلقة جاهزة!
+              </DialogTitle>
+              <DialogDescription>
+                تم نشر الحلقة وإنشاء رابط مشاركة عام. أي شخص يفتح الرابط سيشاهد الحلقة مباشرة.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input readOnly value={shareUrl} className="font-mono text-xs" />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(shareUrl);
+                    toast.success("تم النسخ");
+                  }}
+                >
+                  <Copy className="size-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="secondary">
+                  <a href={shareUrl} target="_blank" rel="noreferrer">
+                    <Play className="ml-2 size-4" />
+                    فتح صفحة المشاهدة
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const text = `شاهد حلقة الأنمي: ${meta?.title ?? ""}`;
+                    const wa = `https://wa.me/?text=${encodeURIComponent(`${text}\n${shareUrl}`)}`;
+                    window.open(wa, "_blank");
+                  }}
+                >
+                  مشاركة واتساب
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const t = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`شاهد حلقة الأنمي: ${meta?.title ?? ""}`)}&url=${encodeURIComponent(shareUrl)}`;
+                    window.open(t, "_blank");
+                  }}
+                >
+                  مشاركة X
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Tabs defaultValue="story">
+
           <TabsList>
             <TabsTrigger value="story">القصة والإعدادات</TabsTrigger>
             <TabsTrigger value="scenes">المشاهد ({data.scenes.length})</TabsTrigger>
