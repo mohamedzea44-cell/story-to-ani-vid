@@ -17,6 +17,26 @@ const STYLE_PROMPTS: Record<string, string> = {
     "dark anime style, deep shadows, high contrast, dramatic lighting, moody atmosphere, seinen",
 };
 
+const SFX_PROMPTS: Record<string, string> = {
+  cinematic: "cinematic ambient atmosphere with subtle orchestral swell and impactful whooshes suggested visually",
+  retro: "retro 80s anime atmosphere, VHS grain feel, synthwave energy",
+  epic: "epic battle atmosphere, dust particles, sparks, dramatic wind",
+  minimal: "clean minimal atmosphere, quiet negative space, gentle ambient light",
+  horror: "eerie tense atmosphere, cold color grading, unsettling shadows",
+  comedic: "playful bright atmosphere, exaggerated expressions, cartoony sparkle",
+};
+
+const VOICE_TONE_INSTRUCTIONS: Record<string, string> = {
+  natural: "Speak in a natural, clear, expressive voice suitable for anime narration.",
+  calm: "Speak in a calm, soft, gentle tone. Slow pace, warm and reassuring.",
+  dramatic: "Speak with intense dramatic emotion, strong emphasis, cinematic weight.",
+  energetic: "Speak with high energy, fast pace, excitement and enthusiasm — shonen anime style.",
+  whisper: "Speak in a quiet, intimate whisper — suspenseful and close-mic.",
+  heroic: "Speak in a bold, confident, heroic tone — determined and powerful.",
+  mysterious: "Speak in a low, mysterious, intriguing tone — measured and secretive.",
+  sad: "Speak in a soft, melancholic, tender tone — emotional and vulnerable.",
+};
+
 // ---------- Split & expand story into scenes ----------
 export const splitStoryIntoScenes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -88,7 +108,7 @@ Rules:
           { role: "system", content: sys },
           {
             role: "user",
-            content: `Story:\n${ep.story_text || "(the user left the story blank — invent a compelling one that matches the mood)"}\n\nStyle: ${ep.style}\nMood: ${ep.mood}\nLanguage of narration/dialogue: ${lang}`,
+            content: `Story:\n${ep.story_text || "(the user left the story blank — invent a compelling one that matches the mood)"}\n\nStyle: ${ep.style}\nMood: ${ep.mood}\nSFX/Atmosphere style: ${(ep as { sfx_style?: string }).sfx_style ?? "cinematic"}\nVoice tone for narration: ${(ep as { voice_tone?: string }).voice_tone ?? "natural"}\nLanguage of narration/dialogue: ${lang}`,
           },
         ],
         response_format: {
@@ -181,7 +201,7 @@ export const generateSceneImage = createServerFn({ method: "POST" })
 
     const { data: ep } = await context.supabase
       .from("episodes")
-      .select("style, mood, user_id")
+      .select("style, mood, user_id, sfx_style")
       .eq("id", scene.episode_id)
       .single();
     if (!ep) throw new Error("Episode not found");
@@ -197,7 +217,9 @@ export const generateSceneImage = createServerFn({ method: "POST" })
     }
 
     const stylePrompt = STYLE_PROMPTS[ep.style] ?? STYLE_PROMPTS["modern-shonen"];
-    const prompt = `${stylePrompt}. Mood: ${ep.mood}. ${charLook}Scene: ${scene.description}. Widescreen 16:9 cinematic composition, anime keyframe quality, no text or watermarks.`;
+    const sfxKey = (ep as { sfx_style?: string }).sfx_style ?? "cinematic";
+    const sfxPrompt = SFX_PROMPTS[sfxKey] ?? SFX_PROMPTS.cinematic;
+    const prompt = `${stylePrompt}. Mood: ${ep.mood}. Atmosphere: ${sfxPrompt}. ${charLook}Scene: ${scene.description}. Widescreen 16:9 cinematic composition, anime keyframe quality, no text or watermarks.`;
 
     await context.supabase
       .from("scenes")
@@ -264,7 +286,7 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
 
     const { data: ep } = await context.supabase
       .from("episodes")
-      .select("user_id")
+      .select("user_id, voice_tone")
       .eq("id", scene.episode_id)
       .single();
     if (!ep) throw new Error("Episode not found");
@@ -282,6 +304,9 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
     const text = [scene.narration, scene.dialogue].filter(Boolean).join("\n\n").trim();
     if (!text) throw new Error("لا يوجد نص لتوليد الصوت");
 
+    const toneKey = (ep as { voice_tone?: string }).voice_tone ?? "natural";
+    const instructions = VOICE_TONE_INSTRUCTIONS[toneKey] ?? VOICE_TONE_INSTRUCTIONS.natural;
+
     await context.supabase
       .from("scenes")
       .update({ audio_status: "generating" })
@@ -294,6 +319,7 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
         model: "openai/gpt-4o-mini-tts",
         input: text,
         voice,
+        instructions,
         response_format: "mp3",
       }),
     });

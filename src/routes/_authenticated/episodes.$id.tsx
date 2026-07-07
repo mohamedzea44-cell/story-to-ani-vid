@@ -85,21 +85,26 @@ function EditorPage() {
     story_text: string;
     style: string;
     mood: string;
+    voice_tone: string;
+    sfx_style: string;
     language: "ar" | "en";
     target_duration_min: number;
   } | null>(null);
 
   // Initialize local meta once
   if (data?.episode && !meta) {
+    const ep = data.episode as typeof data.episode & { voice_tone?: string; sfx_style?: string };
     setMeta({
-      title: data.episode.title,
-      series_title: data.episode.series_title,
-      episode_number: data.episode.episode_number,
-      story_text: data.episode.story_text,
-      style: data.episode.style,
-      mood: data.episode.mood,
-      language: data.episode.language as "ar" | "en",
-      target_duration_min: data.episode.target_duration_min,
+      title: ep.title,
+      series_title: ep.series_title,
+      episode_number: ep.episode_number,
+      story_text: ep.story_text,
+      style: ep.style,
+      mood: ep.mood,
+      voice_tone: ep.voice_tone ?? "natural",
+      sfx_style: ep.sfx_style ?? "cinematic",
+      language: ep.language as "ar" | "en",
+      target_duration_min: ep.target_duration_min,
     });
   }
 
@@ -464,6 +469,64 @@ function EditorPage() {
                 />
               </div>
             </div>
+
+            {/* ===== Audio & Style Settings Panel ===== */}
+            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="grid size-9 place-items-center rounded-lg bg-primary/15 text-primary">
+                  <Mic className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">إعدادات الصوت والمؤثرات</h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    تنعكس هذه الإعدادات تلقائياً على كل عمليات التوليد (السرد، الصور، الجو العام).
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>نبرة الصوت (الراوي والشخصيات)</Label>
+                  <Select
+                    value={meta.voice_tone}
+                    onValueChange={(v) => setMeta({ ...meta, voice_tone: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="natural">طبيعية — واضحة ومعبّرة</SelectItem>
+                      <SelectItem value="calm">هادئة — دافئة وبطيئة</SelectItem>
+                      <SelectItem value="dramatic">درامية — قوية ومؤثرة</SelectItem>
+                      <SelectItem value="energetic">حماسية — سريعة ومليئة بالطاقة</SelectItem>
+                      <SelectItem value="whisper">همس — قريبة ومشوّقة</SelectItem>
+                      <SelectItem value="heroic">بطولية — واثقة وجريئة</SelectItem>
+                      <SelectItem value="mysterious">غامضة — منخفضة ومتأنية</SelectItem>
+                      <SelectItem value="sad">حزينة — رقيقة وعاطفية</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>نوع المؤثرات والجو</Label>
+                  <Select
+                    value={meta.sfx_style}
+                    onValueChange={(v) => setMeta({ ...meta, sfx_style: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cinematic">سينمائي — أوركسترا ومؤثرات ضخمة</SelectItem>
+                      <SelectItem value="epic">ملحمي — معارك وشرارات وغبار</SelectItem>
+                      <SelectItem value="retro">ريترو — أنمي الثمانينات وسينثويف</SelectItem>
+                      <SelectItem value="minimal">هادئ — بسيط ونظيف</SelectItem>
+                      <SelectItem value="horror">رعب — بارد ومتوتّر</SelectItem>
+                      <SelectItem value="comedic">كوميدي — مرح ومبالغ فيه</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                💡 غيّر الإعدادات ثم اضغط "حفظ التغييرات" — أي توليد جديد للصور أو الأصوات سيستخدم القيم الحالية مباشرةً.
+              </p>
+            </div>
+
+
 
             <div className="flex flex-wrap gap-2">
               <Button onClick={saveMeta} disabled={saving}>

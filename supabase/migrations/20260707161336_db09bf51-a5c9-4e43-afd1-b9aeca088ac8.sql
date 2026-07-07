@@ -1,0 +1,3 @@
+ALTER TABLE public.episodes 
+  ADD COLUMN IF NOT EXISTS voice_tone TEXT NOT NULL DEFAULT 'natural',
+  ADD COLUMN IF NOT EXISTS sfx_style TEXT NOT NULL DEFAULT 'cinematic';
