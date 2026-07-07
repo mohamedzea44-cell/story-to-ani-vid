@@ -14,7 +14,37 @@ const STYLE_PROMPTS: Record<string, string> = {
   "ghibli":
     "studio ghibli inspired anime style, hand painted background, warm natural lighting, soft palette",
   "dark":
+const STYLE_PROMPTS: Record<string, string> = {
+  "modern-shonen":
+    "modern shonen anime style, vibrant colors, dynamic action lines, cinematic lighting, high detail",
+  "shojo":
+    "shojo anime style, soft pastel colors, delicate line art, sparkles, romantic atmosphere",
+  "cyberpunk":
+    "cyberpunk anime style, neon lights, dark alleys, rain, glowing signs, futuristic city",
+  "ghibli":
+    "studio ghibli inspired anime style, hand painted background, warm natural lighting, soft palette",
+  "dark":
     "dark anime style, deep shadows, high contrast, dramatic lighting, moody atmosphere, seinen",
+};
+
+const SFX_PROMPTS: Record<string, string> = {
+  cinematic: "cinematic ambient atmosphere with subtle orchestral swell and impactful whooshes suggested visually",
+  retro: "retro 80s anime atmosphere, VHS grain feel, synthwave energy",
+  epic: "epic battle atmosphere, dust particles, sparks, dramatic wind",
+  minimal: "clean minimal atmosphere, quiet negative space, gentle ambient light",
+  horror: "eerie tense atmosphere, cold color grading, unsettling shadows",
+  comedic: "playful bright atmosphere, exaggerated expressions, cartoony sparkle",
+};
+
+const VOICE_TONE_INSTRUCTIONS: Record<string, string> = {
+  natural: "Speak in a natural, clear, expressive voice suitable for anime narration.",
+  calm: "Speak in a calm, soft, gentle tone. Slow pace, warm and reassuring.",
+  dramatic: "Speak with intense dramatic emotion, strong emphasis, cinematic weight.",
+  energetic: "Speak with high energy, fast pace, excitement and enthusiasm — shonen anime style.",
+  whisper: "Speak in a quiet, intimate whisper — suspenseful and close-mic.",
+  heroic: "Speak in a bold, confident, heroic tone — determined and powerful.",
+  mysterious: "Speak in a low, mysterious, intriguing tone — measured and secretive.",
+  sad: "Speak in a soft, melancholic, tender tone — emotional and vulnerable.",
 };
 
 // ---------- Split & expand story into scenes ----------
