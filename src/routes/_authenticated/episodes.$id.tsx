@@ -390,6 +390,92 @@ function EditorPage() {
           </DialogContent>
         </Dialog>
 
+        {/* ===== Review Dialog ===== */}
+        <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="size-5 text-primary" />
+                مراجعة الحلقة قبل النشر
+              </DialogTitle>
+              <DialogDescription>
+                شاهد الحلقة كاملة ثم اختر: احفظها كمسودة للتعديل لاحقاً، أو انشرها الآن واحصل على رابط المشاركة.
+              </DialogDescription>
+            </DialogHeader>
+
+            {data.scenes.filter((s) => s.image_url || s.audio_url).length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                لا توجد مشاهد جاهزة للمراجعة بعد.
+              </div>
+            ) : (
+              <EpisodePlayer
+                title={meta.title}
+                scenes={data.scenes.map((s) => ({
+                  id: s.id,
+                  narration: s.narration,
+                  dialogue: s.dialogue,
+                  character_name: s.character_name,
+                  duration_sec: s.duration_sec,
+                  image_url: s.image_url,
+                  audio_url: s.audio_url,
+                }))}
+              />
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+              <div className="text-xs text-muted-foreground">
+                {scenesReady} من {data.scenes.length} مشهد جاهز
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (data.episode.status === "published") {
+                      await unpublishFn({ data: { id } });
+                      toast.success("تم الحفظ كمسودة");
+                      refetch();
+                    } else {
+                      toast.success("محفوظة كمسودة");
+                    }
+                    setReviewOpen(false);
+                  }}
+                >
+                  حفظ كمسودة
+                </Button>
+                <Button
+                  className="glow"
+                  disabled={publishingFromReview || scenesReady === 0}
+                  onClick={async () => {
+                    setPublishingFromReview(true);
+                    try {
+                      const { slug } = await publishFn({ data: { id } });
+                      const url = `${window.location.origin}/watch/${slug}`;
+                      setShareUrl(url);
+                      try { await navigator.clipboard?.writeText(url); } catch { /* ignore */ }
+                      setReviewOpen(false);
+                      setShareOpen(true);
+                      refetch();
+                    } catch (e) {
+                      toast.error(String(e));
+                    } finally {
+                      setPublishingFromReview(false);
+                    }
+                  }}
+                >
+                  {publishingFromReview ? (
+                    <Loader2 className="ml-2 size-4 animate-spin" />
+                  ) : (
+                    <Share2 className="ml-2 size-4" />
+                  )}
+                  نشر الحلقة الآن
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
+
         <Tabs defaultValue="story">
 
           <TabsList>
