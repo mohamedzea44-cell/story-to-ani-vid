@@ -157,6 +157,8 @@ function EditorPage() {
   const [autoTotal, setAutoTotal] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [publishingFromReview, setPublishingFromReview] = useState(false);
 
   async function autoGenerate() {
     if (!meta) return;
