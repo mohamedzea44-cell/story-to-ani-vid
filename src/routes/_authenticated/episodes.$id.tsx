@@ -209,16 +209,12 @@ function EditorPage() {
         setAutoDone((d) => d + 1);
       }
 
-      // 5) Publish and show share link
-      setAutoLabel("نشر الحلقة وإنشاء رابط المشاركة…");
-      const { slug } = await publishFn({ data: { id } });
+      // 5) Refresh and open review — user decides draft vs publish
+      setAutoLabel("تجهيز المراجعة…");
       setAutoDone((d) => d + 1);
-      const url = `${window.location.origin}/watch/${slug}`;
-      setShareUrl(url);
-      try { await navigator.clipboard?.writeText(url); } catch { /* ignore */ }
-      setShareOpen(true);
-      toast.success("جاهز! تم إنشاء الحلقة ونسخ رابط المشاركة");
-      refetch();
+      await refetch();
+      setReviewOpen(true);
+      toast.success("جاهز للمراجعة — شاهد الحلقة ثم اختر حفظ كمسودة أو نشر");
     } catch (e) {
       toast.error(`خطأ: ${String(e)}`);
     } finally {
