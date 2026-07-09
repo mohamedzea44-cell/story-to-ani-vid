@@ -260,6 +260,14 @@ function EditorPage() {
               <Play className="ml-2 size-4" />
               معاينة
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setReviewOpen(true)}
+              disabled={scenesReady === 0}
+            >
+              <CheckCircle2 className="ml-2 size-4" />
+              مراجعة
+            </Button>
             {data.episode.status === "published" ? (
               <>
                 <Button
