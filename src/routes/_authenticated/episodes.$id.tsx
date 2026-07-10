@@ -783,6 +783,10 @@ function ScenesTab({
           {bulkAud ? <Loader2 className="ml-2 size-4 animate-spin" /> : <Mic className="ml-2 size-4" />}
           ولّد كل الأصوات الناقصة
         </Button>
+        <Button variant="outline" onClick={() => generateAll("vid")} disabled={bulkVid}>
+          {bulkVid ? <Loader2 className="ml-2 size-4 animate-spin" /> : <Video className="ml-2 size-4" />}
+          حرّك كل المشاهد لفيديو
+        </Button>
         <Button
           variant="secondary"
           onClick={async () => {
@@ -819,6 +823,7 @@ function ScenesTab({
             deleteSceneFn={deleteSceneFn}
             imgFn={imgFn}
             audFn={audFn}
+            vidFn={vidFn}
           />
         ))}
       </div>
