@@ -841,6 +841,7 @@ function SceneRow({
   deleteSceneFn,
   imgFn,
   audFn,
+  vidFn,
 }: {
   scene: SceneRow;
   index: number;
@@ -851,10 +852,12 @@ function SceneRow({
   deleteSceneFn: (args: { data: unknown }) => Promise<unknown>;
   imgFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
   audFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
+  vidFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
 }) {
   const [local, setLocal] = useState(scene);
   const [imgBusy, setImgBusy] = useState(false);
   const [audBusy, setAudBusy] = useState(false);
+  const [vidBusy, setVidBusy] = useState(false);
 
   async function save(partial: Partial<SceneRow>) {
     const next = { ...local, ...partial };
@@ -895,6 +898,22 @@ function SceneRow({
       toast.error(String(e));
     } finally {
       setAudBusy(false);
+    }
+  }
+
+  async function genVid() {
+    if (!scene.image_url) {
+      toast.error("ولّد صورة المشهد أولاً");
+      return;
+    }
+    setVidBusy(true);
+    try {
+      await vidFn({ data: { sceneId: scene.id } });
+      onUpdate();
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setVidBusy(false);
     }
   }
 
