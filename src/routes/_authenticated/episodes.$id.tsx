@@ -185,7 +185,8 @@ function EditorPage() {
 
       const needImg = currentScenes.filter((s) => !s.image_url);
       const needAud = currentScenes.filter((s) => !s.audio_url);
-      const total = needImg.length + needAud.length + 1; // +1 for publish
+      // Refetch after images to know which scenes need video (need image_url first)
+      const total = needImg.length + needAud.length + currentScenes.length + 1;
       setAutoTotal(total);
 
       // 3) Images
@@ -211,6 +212,25 @@ function EditorPage() {
         }
         setAutoDone((d) => d + 1);
       }
+
+      // 5) Video clips (Runway) — needs image already done
+      const refreshed = await getFn({ data: { id } });
+      qc.setQueryData(["episode", id], refreshed);
+      const needVid = refreshed.scenes.filter(
+        (s: { image_url: string | null; video_url?: string | null }) =>
+          s.image_url && !s.video_url,
+      );
+      for (let i = 0; i < needVid.length; i++) {
+        const s = needVid[i];
+        setAutoLabel(`تحريك فيديو المشهد ${s.order_index + 1} (${i + 1}/${needVid.length}) — قد يستغرق دقيقتين`);
+        try {
+          await vidFn({ data: { sceneId: s.id } });
+        } catch (e) {
+          toast.error(`فيديو مشهد ${s.order_index + 1}: ${String(e)}`);
+        }
+        setAutoDone((d) => d + 1);
+      }
+
 
       // 5) Refresh and open review — user decides draft vs publish
       setAutoLabel("تجهيز المراجعة…");
