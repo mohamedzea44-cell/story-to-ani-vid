@@ -727,6 +727,7 @@ function ScenesTab({
   deleteSceneFn,
   imgFn,
   audFn,
+  vidFn,
 }: {
   scenes: SceneRow[];
   characters: { id: string; name: string }[];
@@ -736,18 +737,23 @@ function ScenesTab({
   deleteSceneFn: (args: { data: unknown }) => Promise<unknown>;
   imgFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
   audFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
+  vidFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
 }) {
   const [bulkImg, setBulkImg] = useState(false);
   const [bulkAud, setBulkAud] = useState(false);
+  const [bulkVid, setBulkVid] = useState(false);
 
-  async function generateAll(kind: "img" | "aud") {
-    const setter = kind === "img" ? setBulkImg : setBulkAud;
+  async function generateAll(kind: "img" | "aud" | "vid") {
+    const setter = kind === "img" ? setBulkImg : kind === "aud" ? setBulkAud : setBulkVid;
     setter(true);
-    const missing = scenes.filter((s) => (kind === "img" ? !s.image_url : !s.audio_url));
+    const missing = scenes.filter((s) =>
+      kind === "img" ? !s.image_url : kind === "aud" ? !s.audio_url : s.image_url && !s.video_url,
+    );
     for (const s of missing) {
       try {
         if (kind === "img") await imgFn({ data: { sceneId: s.id } });
-        else await audFn({ data: { sceneId: s.id } });
+        else if (kind === "aud") await audFn({ data: { sceneId: s.id } });
+        else await vidFn({ data: { sceneId: s.id } });
         onUpdate();
       } catch (e) {
         toast.error(`مشهد ${s.order_index + 1}: ${String(e)}`);
