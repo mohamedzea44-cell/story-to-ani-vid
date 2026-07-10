@@ -350,3 +350,127 @@ export const generateSceneAudio = createServerFn({ method: "POST" })
       .eq("id", scene.id);
     return { url };
   });
+
+// ---------- Generate real animated video clip via Runway ML ----------
+const RUNWAY_API = "https://api.dev.runwayml.com/v1";
+const RUNWAY_VERSION = "2024-11-06";
+
+async function runwayPoll(taskId: string, key: string): Promise<string> {
+  const started = Date.now();
+  // Poll up to ~4 minutes
+  while (Date.now() - started < 4 * 60 * 1000) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const res = await fetch(`${RUNWAY_API}/tasks/${taskId}`, {
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "X-Runway-Version": RUNWAY_VERSION,
+      },
+    });
+    if (!res.ok) throw new Error(`Runway poll failed: ${res.status} ${await res.text()}`);
+    const j = (await res.json()) as {
+      status: string;
+      output?: string[];
+      failure?: string;
+      failureCode?: string;
+    };
+    if (j.status === "SUCCEEDED" && j.output?.[0]) return j.output[0];
+    if (j.status === "FAILED" || j.status === "CANCELLED")
+      throw new Error(`Runway task ${j.status}: ${j.failure ?? j.failureCode ?? "unknown"}`);
+  }
+  throw new Error("Runway timeout — استغرق الفيديو وقتاً طويلاً");
+}
+
+export const generateSceneVideo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ sceneId: z.string().uuid() }).parse(v))
+  .handler(async ({ data, context }) => {
+    const key = process.env.RUNWAYML_API_SECRET;
+    if (!key) throw new Error("Missing RUNWAYML_API_SECRET — أضف مفتاح Runway ML");
+
+    const { data: scene, error } = await context.supabase
+      .from("scenes")
+      .select("id, episode_id, description, image_url, duration_sec, character_id")
+      .eq("id", data.sceneId)
+      .single();
+    if (error || !scene) throw new Error("Scene not found");
+    if (!scene.image_url) throw new Error("لازم تولّد صورة المشهد الأول");
+
+    const { data: ep } = await context.supabase
+      .from("episodes")
+      .select("style, mood, user_id, sfx_style")
+      .eq("id", scene.episode_id)
+      .single();
+    if (!ep) throw new Error("Episode not found");
+
+    const stylePrompt = STYLE_PROMPTS[ep.style] ?? STYLE_PROMPTS["modern-shonen"];
+    const sfxKey = (ep as { sfx_style?: string }).sfx_style ?? "cinematic";
+    const sfxPrompt = SFX_PROMPTS[sfxKey] ?? SFX_PROMPTS.cinematic;
+    const motionPrompt = `${stylePrompt}. ${sfxPrompt}. Scene motion: ${scene.description}. Smooth cinematic camera movement, subtle character animation, dynamic anime motion.`.slice(0, 900);
+
+    // Runway gen4_turbo accepts duration 5 or 10 seconds
+    const duration = scene.duration_sec >= 8 ? 10 : 5;
+
+    await context.supabase
+      .from("scenes")
+      .update({ video_status: "generating" })
+      .eq("id", scene.id);
+
+    const createRes = await fetch(`${RUNWAY_API}/image_to_video`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "X-Runway-Version": RUNWAY_VERSION,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gen4_turbo",
+        promptImage: scene.image_url,
+        promptText: motionPrompt,
+        duration,
+        ratio: "1280:720",
+      }),
+    });
+
+    if (!createRes.ok) {
+      await context.supabase.from("scenes").update({ video_status: "failed" }).eq("id", scene.id);
+      const t = await createRes.text();
+      if (createRes.status === 401) throw new Error("Runway API key غير صحيح");
+      if (createRes.status === 429) throw new Error("Runway rate limit — انتظر قليلاً");
+      throw new Error(`Runway create failed: ${createRes.status} ${t}`);
+    }
+    const created = (await createRes.json()) as { id: string };
+    await context.supabase
+      .from("scenes")
+      .update({ video_task_id: created.id })
+      .eq("id", scene.id);
+
+    let videoUrl: string;
+    try {
+      videoUrl = await runwayPoll(created.id, key);
+    } catch (e) {
+      await context.supabase.from("scenes").update({ video_status: "failed" }).eq("id", scene.id);
+      throw e;
+    }
+
+    // Download the mp4 and store in Supabase for a stable long-lived URL
+    const dl = await fetch(videoUrl);
+    if (!dl.ok) throw new Error(`Download failed: ${dl.status}`);
+    const buf = new Uint8Array(await dl.arrayBuffer());
+    const path = `${ep.user_id}/video/${scene.id}.mp4`;
+    const { error: upErr } = await context.supabase.storage
+      .from("episode-assets")
+      .upload(path, buf, { contentType: "video/mp4", upsert: true });
+    if (upErr) throw new Error(upErr.message);
+
+    const { data: signed } = await context.supabase.storage
+      .from("episode-assets")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    const url = signed?.signedUrl;
+    if (!url) throw new Error("Sign URL failed");
+
+    await context.supabase
+      .from("scenes")
+      .update({ video_url: url, video_status: "ready" })
+      .eq("id", scene.id);
+    return { url };
+  });

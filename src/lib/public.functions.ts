@@ -22,7 +22,7 @@ export const getPublicEpisode = createServerFn({ method: "GET" })
     const [{ data: scenes }, { data: chars }] = await Promise.all([
       client
         .from("scenes")
-        .select("id, order_index, narration, dialogue, character_name, duration_sec, image_url, audio_url")
+        .select("id, order_index, narration, dialogue, character_name, duration_sec, image_url, audio_url, video_url")
         .eq("episode_id", ep.id)
         .order("order_index"),
       client.from("characters").select("id, name").eq("episode_id", ep.id),

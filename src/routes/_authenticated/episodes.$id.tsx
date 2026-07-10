@@ -16,6 +16,7 @@ import {
   splitStoryIntoScenes,
   generateSceneImage,
   generateSceneAudio,
+  generateSceneVideo,
 } from "@/lib/ai.functions";
 import { AppHeader } from "@/components/app-header";
 import { EpisodePlayer } from "@/components/episode-player";
@@ -47,6 +48,7 @@ import {
   ArrowRight,
   Wand2,
   CheckCircle2,
+  Video,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/episodes/$id")({
@@ -68,6 +70,7 @@ function EditorPage() {
   const deleteCharFn = useServerFn(deleteCharacter);
   const imgFn = useServerFn(generateSceneImage);
   const audFn = useServerFn(generateSceneAudio);
+  const vidFn = useServerFn(generateSceneVideo);
   const publishFn = useServerFn(publishEpisode);
   const unpublishFn = useServerFn(unpublishEpisode);
 
@@ -182,7 +185,8 @@ function EditorPage() {
 
       const needImg = currentScenes.filter((s) => !s.image_url);
       const needAud = currentScenes.filter((s) => !s.audio_url);
-      const total = needImg.length + needAud.length + 1; // +1 for publish
+      // Refetch after images to know which scenes need video (need image_url first)
+      const total = needImg.length + needAud.length + currentScenes.length + 1;
       setAutoTotal(total);
 
       // 3) Images
@@ -208,6 +212,25 @@ function EditorPage() {
         }
         setAutoDone((d) => d + 1);
       }
+
+      // 5) Video clips (Runway) — needs image already done
+      const refreshed = await getFn({ data: { id } });
+      qc.setQueryData(["episode", id], refreshed);
+      const needVid = refreshed.scenes.filter(
+        (s: { image_url: string | null; video_url?: string | null }) =>
+          s.image_url && !s.video_url,
+      );
+      for (let i = 0; i < needVid.length; i++) {
+        const s = needVid[i];
+        setAutoLabel(`تحريك فيديو المشهد ${s.order_index + 1} (${i + 1}/${needVid.length}) — قد يستغرق دقيقتين`);
+        try {
+          await vidFn({ data: { sceneId: s.id } });
+        } catch (e) {
+          toast.error(`فيديو مشهد ${s.order_index + 1}: ${String(e)}`);
+        }
+        setAutoDone((d) => d + 1);
+      }
+
 
       // 5) Refresh and open review — user decides draft vs publish
       setAutoLabel("تجهيز المراجعة…");
@@ -659,6 +682,7 @@ function EditorPage() {
               deleteSceneFn={deleteSceneFn}
               imgFn={imgFn}
               audFn={audFn}
+              vidFn={vidFn}
             />
           </TabsContent>
 
@@ -688,8 +712,10 @@ type SceneRow = {
   duration_sec: number;
   image_url: string | null;
   audio_url: string | null;
+  video_url?: string | null;
   image_status: string;
   audio_status: string;
+  video_status?: string | null;
 };
 
 function ScenesTab({
@@ -701,6 +727,7 @@ function ScenesTab({
   deleteSceneFn,
   imgFn,
   audFn,
+  vidFn,
 }: {
   scenes: SceneRow[];
   characters: { id: string; name: string }[];
@@ -710,18 +737,23 @@ function ScenesTab({
   deleteSceneFn: (args: { data: unknown }) => Promise<unknown>;
   imgFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
   audFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
+  vidFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
 }) {
   const [bulkImg, setBulkImg] = useState(false);
   const [bulkAud, setBulkAud] = useState(false);
+  const [bulkVid, setBulkVid] = useState(false);
 
-  async function generateAll(kind: "img" | "aud") {
-    const setter = kind === "img" ? setBulkImg : setBulkAud;
+  async function generateAll(kind: "img" | "aud" | "vid") {
+    const setter = kind === "img" ? setBulkImg : kind === "aud" ? setBulkAud : setBulkVid;
     setter(true);
-    const missing = scenes.filter((s) => (kind === "img" ? !s.image_url : !s.audio_url));
+    const missing = scenes.filter((s) =>
+      kind === "img" ? !s.image_url : kind === "aud" ? !s.audio_url : s.image_url && !s.video_url,
+    );
     for (const s of missing) {
       try {
         if (kind === "img") await imgFn({ data: { sceneId: s.id } });
-        else await audFn({ data: { sceneId: s.id } });
+        else if (kind === "aud") await audFn({ data: { sceneId: s.id } });
+        else await vidFn({ data: { sceneId: s.id } });
         onUpdate();
       } catch (e) {
         toast.error(`مشهد ${s.order_index + 1}: ${String(e)}`);
@@ -750,6 +782,10 @@ function ScenesTab({
         <Button variant="outline" onClick={() => generateAll("aud")} disabled={bulkAud}>
           {bulkAud ? <Loader2 className="ml-2 size-4 animate-spin" /> : <Mic className="ml-2 size-4" />}
           ولّد كل الأصوات الناقصة
+        </Button>
+        <Button variant="outline" onClick={() => generateAll("vid")} disabled={bulkVid}>
+          {bulkVid ? <Loader2 className="ml-2 size-4 animate-spin" /> : <Video className="ml-2 size-4" />}
+          حرّك كل المشاهد لفيديو
         </Button>
         <Button
           variant="secondary"
@@ -787,6 +823,7 @@ function ScenesTab({
             deleteSceneFn={deleteSceneFn}
             imgFn={imgFn}
             audFn={audFn}
+            vidFn={vidFn}
           />
         ))}
       </div>
@@ -804,6 +841,7 @@ function SceneRow({
   deleteSceneFn,
   imgFn,
   audFn,
+  vidFn,
 }: {
   scene: SceneRow;
   index: number;
@@ -814,10 +852,12 @@ function SceneRow({
   deleteSceneFn: (args: { data: unknown }) => Promise<unknown>;
   imgFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
   audFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
+  vidFn: (args: { data: { sceneId: string } }) => Promise<{ url: string }>;
 }) {
   const [local, setLocal] = useState(scene);
   const [imgBusy, setImgBusy] = useState(false);
   const [audBusy, setAudBusy] = useState(false);
+  const [vidBusy, setVidBusy] = useState(false);
 
   async function save(partial: Partial<SceneRow>) {
     const next = { ...local, ...partial };
@@ -861,6 +901,22 @@ function SceneRow({
     }
   }
 
+  async function genVid() {
+    if (!scene.image_url) {
+      toast.error("ولّد صورة المشهد أولاً");
+      return;
+    }
+    setVidBusy(true);
+    try {
+      await vidFn({ data: { sceneId: scene.id } });
+      onUpdate();
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setVidBusy(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -882,7 +938,9 @@ function SceneRow({
       <div className="grid gap-3 md:grid-cols-[240px_1fr]">
         <div className="space-y-2">
           <div className="aspect-video overflow-hidden rounded-lg bg-black/40">
-            {scene.image_url ? (
+            {scene.video_url ? (
+              <video src={scene.video_url} controls className="size-full object-cover" />
+            ) : scene.image_url ? (
               <img src={scene.image_url} alt="" className="size-full object-cover" />
             ) : (
               <div className="grid size-full place-items-center text-xs text-muted-foreground">
@@ -892,7 +950,11 @@ function SceneRow({
           </div>
           <Button size="sm" variant="outline" className="w-full" onClick={genImg} disabled={imgBusy}>
             {imgBusy ? <Loader2 className="ml-2 size-3 animate-spin" /> : <ImageIcon className="ml-2 size-3" />}
-            {scene.image_url ? "أعد التوليد" : "ولّد الصورة"}
+            {scene.image_url ? "أعد الصورة" : "ولّد الصورة"}
+          </Button>
+          <Button size="sm" variant="outline" className="w-full" onClick={genVid} disabled={vidBusy || !scene.image_url}>
+            {vidBusy ? <Loader2 className="ml-2 size-3 animate-spin" /> : <Video className="ml-2 size-3" />}
+            {scene.video_url ? "أعد الفيديو" : "حرّك لفيديو"}
           </Button>
           {scene.audio_url ? (
             <audio controls src={scene.audio_url} className="w-full" />

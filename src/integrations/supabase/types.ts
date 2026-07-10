@@ -68,6 +68,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          video_generation_enabled: boolean
           voice_tone: string
         }
         Insert: {
@@ -88,6 +89,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id: string
+          video_generation_enabled?: boolean
           voice_tone?: string
         }
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          video_generation_enabled?: boolean
           voice_tone?: string
         }
         Relationships: []
@@ -149,6 +152,9 @@ export type Database = {
           image_url: string | null
           narration: string
           order_index: number
+          video_status: string | null
+          video_task_id: string | null
+          video_url: string | null
         }
         Insert: {
           audio_status?: string
@@ -165,6 +171,9 @@ export type Database = {
           image_url?: string | null
           narration?: string
           order_index: number
+          video_status?: string | null
+          video_task_id?: string | null
+          video_url?: string | null
         }
         Update: {
           audio_status?: string
@@ -181,6 +190,9 @@ export type Database = {
           image_url?: string | null
           narration?: string
           order_index?: number
+          video_status?: string | null
+          video_task_id?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
