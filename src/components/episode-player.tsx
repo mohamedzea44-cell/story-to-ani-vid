@@ -10,6 +10,7 @@ export type PlayerScene = {
   duration_sec: number;
   image_url: string | null;
   audio_url: string | null;
+  video_url?: string | null;
 };
 
 export function EpisodePlayer({
