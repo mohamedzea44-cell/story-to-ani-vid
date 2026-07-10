@@ -682,6 +682,7 @@ function EditorPage() {
               deleteSceneFn={deleteSceneFn}
               imgFn={imgFn}
               audFn={audFn}
+              vidFn={vidFn}
             />
           </TabsContent>
 
@@ -711,8 +712,10 @@ type SceneRow = {
   duration_sec: number;
   image_url: string | null;
   audio_url: string | null;
+  video_url?: string | null;
   image_status: string;
   audio_status: string;
+  video_status?: string;
 };
 
 function ScenesTab({
