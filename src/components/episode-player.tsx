@@ -58,7 +58,17 @@ export function EpisodePlayer({
   return (
     <div className="mx-auto max-w-5xl">
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-black">
-        {scene.image_url ? (
+        {scene.video_url ? (
+          <video
+            key={scene.id}
+            src={scene.video_url}
+            autoPlay={playing}
+            muted={!!scene.audio_url}
+            playsInline
+            loop
+            className="size-full object-cover"
+          />
+        ) : scene.image_url ? (
           <img
             src={scene.image_url}
             alt=""
