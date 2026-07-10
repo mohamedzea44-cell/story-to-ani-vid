@@ -16,6 +16,7 @@ import {
   splitStoryIntoScenes,
   generateSceneImage,
   generateSceneAudio,
+  generateSceneVideo,
 } from "@/lib/ai.functions";
 import { AppHeader } from "@/components/app-header";
 import { EpisodePlayer } from "@/components/episode-player";
@@ -47,6 +48,7 @@ import {
   ArrowRight,
   Wand2,
   CheckCircle2,
+  Video,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/episodes/$id")({
@@ -68,6 +70,7 @@ function EditorPage() {
   const deleteCharFn = useServerFn(deleteCharacter);
   const imgFn = useServerFn(generateSceneImage);
   const audFn = useServerFn(generateSceneAudio);
+  const vidFn = useServerFn(generateSceneVideo);
   const publishFn = useServerFn(publishEpisode);
   const unpublishFn = useServerFn(unpublishEpisode);
 
