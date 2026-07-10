@@ -938,7 +938,9 @@ function SceneRow({
       <div className="grid gap-3 md:grid-cols-[240px_1fr]">
         <div className="space-y-2">
           <div className="aspect-video overflow-hidden rounded-lg bg-black/40">
-            {scene.image_url ? (
+            {scene.video_url ? (
+              <video src={scene.video_url} controls className="size-full object-cover" />
+            ) : scene.image_url ? (
               <img src={scene.image_url} alt="" className="size-full object-cover" />
             ) : (
               <div className="grid size-full place-items-center text-xs text-muted-foreground">
@@ -948,7 +950,11 @@ function SceneRow({
           </div>
           <Button size="sm" variant="outline" className="w-full" onClick={genImg} disabled={imgBusy}>
             {imgBusy ? <Loader2 className="ml-2 size-3 animate-spin" /> : <ImageIcon className="ml-2 size-3" />}
-            {scene.image_url ? "أعد التوليد" : "ولّد الصورة"}
+            {scene.image_url ? "أعد الصورة" : "ولّد الصورة"}
+          </Button>
+          <Button size="sm" variant="outline" className="w-full" onClick={genVid} disabled={vidBusy || !scene.image_url}>
+            {vidBusy ? <Loader2 className="ml-2 size-3 animate-spin" /> : <Video className="ml-2 size-3" />}
+            {scene.video_url ? "أعد الفيديو" : "حرّك لفيديو"}
           </Button>
           {scene.audio_url ? (
             <audio controls src={scene.audio_url} className="w-full" />
