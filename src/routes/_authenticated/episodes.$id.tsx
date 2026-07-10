@@ -715,7 +715,7 @@ type SceneRow = {
   video_url?: string | null;
   image_status: string;
   audio_status: string;
-  video_status?: string;
+  video_status?: string | null;
 };
 
 function ScenesTab({
