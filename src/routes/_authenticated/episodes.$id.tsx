@@ -426,24 +426,49 @@ function EditorPage() {
               </DialogDescription>
             </DialogHeader>
 
-            {data.scenes.filter((s) => s.image_url || s.audio_url).length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                لا توجد مشاهد جاهزة للمراجعة بعد.
-              </div>
-            ) : (
-              <EpisodePlayer
-                title={meta.title}
-                scenes={data.scenes.map((s) => ({
-                  id: s.id,
-                  narration: s.narration,
-                  dialogue: s.dialogue,
-                  character_name: s.character_name,
-                  duration_sec: s.duration_sec,
-                  image_url: s.image_url,
-                  audio_url: s.audio_url,
-                }))}
-              />
-            )}
+            {(() => {
+              const previewScenes = data.scenes.filter(
+                (s) => s.video_url || s.image_url || s.audio_url,
+              );
+              if (previewScenes.length === 0) {
+                return (
+                  <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                    لا توجد مشاهد جاهزة للمراجعة بعد.
+                  </div>
+                );
+              }
+              const withVideo = previewScenes.filter((s) => s.video_url).length;
+              const withAudio = previewScenes.filter((s) => s.audio_url).length;
+              return (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-full bg-muted px-2 py-1">
+                      🎬 {withVideo}/{previewScenes.length} فيديو
+                    </span>
+                    <span className="rounded-full bg-muted px-2 py-1">
+                      🔊 {withAudio}/{previewScenes.length} صوت
+                    </span>
+                    <span className="text-[11px]">
+                      المعاينة تدمج فيديو كل مشهد مع الصوت المتزامن قبل النشر
+                    </span>
+                  </div>
+                  <EpisodePlayer
+                    title={meta.title}
+                    autoplay
+                    scenes={previewScenes.map((s) => ({
+                      id: s.id,
+                      narration: s.narration,
+                      dialogue: s.dialogue,
+                      character_name: s.character_name,
+                      duration_sec: s.duration_sec,
+                      image_url: s.image_url,
+                      audio_url: s.audio_url,
+                      video_url: s.video_url ?? null,
+                    }))}
+                  />
+                </div>
+              );
+            })()}
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
               <div className="text-xs text-muted-foreground">
